@@ -8,6 +8,7 @@
 - **零第三方依赖**：只用 Python 标准库，Actions 里不需要 `pip install`
 - **不爬出版方页面**：数据取自 [Crossref](https://www.crossref.org/) 官方接口，摘要由出版方 deposit（JATS 格式）
 - **预印本**：arXiv `physics.chem-ph`，与正式发表条目按标题自动合并去重
+- **摘要补全**：APS（PRL）不向 Crossref 提供摘要，从文章页取回并缓存
 - **只翻标题**：一天 40 篇标题约 4500 字符，MyMemory 免费额度足够，成本≈0
 
 站点：<https://clearcode0915-ai.github.io/chemradar/>
@@ -52,12 +53,15 @@ python src/run.py --pace 1.0      # 放慢翻译节奏（被限流时用）
 |---|---|
 | `[site] title` / `subtitle` | 页面标题与副标题 |
 | `[site] window_days` | 每次抓取回溯天数，默认 14 |
-| `[site] keep_days` | `data/papers.json` 保留多久历史 |
+| `[site] keep_days` | `data/papers.json` 保留多久历史，默认 90 天 |
+| `[site] page_limit` | 页面最多放多少篇（默认 1000，`0` = 不限），数据不受影响 |
 | `[fetch] mailto` | Crossref 联系邮箱，走 polite pool 更稳 |
 | `[fetch] rows` | 单刊单次请求条数（上限 1000） |
 | `[fetch] arxiv` | 是否收 `physics.chem-ph` 预印本，默认 `true` |
 | `[filter] drop_titles` | 要剔除的前置内容标题正则（见下节） |
 | `[filter] drop_anonymous` | 无作者且无摘要的条目一律剔除，默认 `true` |
+| `[abstracts] enabled` | 是否给 APS 条目补摘要，默认 `true` |
+| `[abstracts] max_per_run` | 单轮最多补多少篇，默认 60 |
 | `[translate] backend` | `mymemory` 或 `none` |
 | `[translate] email` | MyMemory 邮箱，额度 5000 → 50000 字符/天 |
 | `[translate] max_chars_per_run` | 单轮字符预算，`0` = 自动 |
@@ -100,12 +104,22 @@ Crossref 里混着一批「期刊前置内容」，它们同样是 `type:journal
 
 ## 常见问题
 
+**数据能存多久？**
+抓取窗口 14 天（`window_days`），历史保留 90 天（`keep_days`）。也就是说页面最多能累积约 90 天的文章；
+更早的会在下次运行时被丢掉。页面本身只放最近 1000 篇（`page_limit`），但 `data/papers.json` 里仍是完整数据。
+
+**需要我手动跑吗？**
+不需要。GitHub Actions 每天自动跑两次（北京时间约 06:10 / 18:10）：抓新文章 → 补译标题 →
+生成页面 → 提交数据 → 部署 Pages。只有改了 `config.toml` 想立刻生效时，才需要去 Actions 页面手动 Run 一次。
+
 **为什么有的标题没有中文标题？**
 MyMemory 免费额度有限或 IP 被限流时会停手，下次运行自动续译。缓存按标题哈希存，不会重复消耗额度。
 日志里会打「仍缺 N 条」；填了 `translate.email` 基本一轮就能补齐。
 
 **摘要哪来的？**
-Crossref 里出版方 deposit 的 JATS 摘要，去标签后原样展示；摘要**不翻译**，只翻标题。
+绝大多数刊是 Crossref 里出版方 deposit 的 JATS 摘要，去标签后原样展示。
+APS（PRL）不提供摘要，`src/abstracts.py` 会去文章页取一次并缓存，所以新条目可能先没有摘要，
+下一轮运行补上。摘要**不翻译**，只翻标题。
 
 **`ASAP` 角标是什么意思？**
 Crossref 里没有卷号/页码、只有在线发表时间的条目，即 ACS 的 Articles ASAP（定稿前在线发表）。

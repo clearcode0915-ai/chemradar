@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import build, fetch, filters, translate  # noqa: E402
+from src import abstracts, build, fetch, filters, translate  # noqa: E402
 from src.util import DATA, load_config, log, read_json, write_json  # noqa: E402
 
 
@@ -65,6 +65,10 @@ def main() -> int:
         log(f"▸ 剔除已从配置移除的期刊条目 {len(papers) - len(keep_papers)} 篇")
     papers = keep_papers
     log(f"▸ 合并后共 {len(papers)} 篇（含历史 {len(history)} 篇）")
+
+    if cfg.get("abstracts", {}).get("enabled", True):
+        log("▸ 补全摘要（APS 等不提供摘要的刊）")
+        abstracts.enrich(papers, cfg)
 
     papers, dropped = filters.apply(papers, cfg)
     if dropped:

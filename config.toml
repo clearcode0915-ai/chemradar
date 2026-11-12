@@ -7,6 +7,7 @@ title = "ChemRadar"
 subtitle = "计算化学文献速递 · latest computational chemistry papers"
 window_days = 14     # 每次抓取回溯多少天（首次运行会把这段窗口全抓下来）
 keep_days = 90       # data/papers.json 里保留多久的历史，超出即丢弃
+page_limit = 1000    # 页面最多放多少篇（数据仍保留 keep_days 天，0 = 不限）
 
 [fetch]
 # 建议填你的邮箱：Crossref 会把你放进 polite pool，响应更快也更少被限流
@@ -32,6 +33,12 @@ drop_titles = [
 ]
 # 无作者且无摘要的条目一律视为非研究内容（前置内容几乎都长这样）
 drop_anonymous = true
+
+[abstracts]
+# APS（PRL 等）不向 Crossref 提供摘要，从文章页补；结果缓存，每篇只取一次
+enabled = true
+max_per_run = 60     # 单轮最多补多少篇，避免一次打太多请求
+workers = 3
 
 [translate]
 backend = "mymemory"       # mymemory | none
@@ -100,3 +107,9 @@ issn = "1759-0876"
 label = "WIREs"
 name = "WIREs Comput. Mol. Sci."
 color = "#CECBF6"
+
+[[journals]]
+issn = "0031-9007"
+label = "PRL"
+name = "Phys. Rev. Lett."
+color = "#F09595"

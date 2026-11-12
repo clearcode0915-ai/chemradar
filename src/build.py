@@ -12,6 +12,10 @@ MAX_ABS = 1800  # 摘要截断长度，控制页面体积
 
 def _payload(papers: list[dict], cfg: dict) -> dict:
     site = cfg.get("site", {})
+    limit = int(site.get("page_limit", 0) or 0)
+    total = len(papers)
+    if limit and total > limit:
+        papers = papers[:limit]
     journals = [{"label": j["label"], "name": j.get("name", j["label"]),
                  "color": j.get("color", "#888780")} for j in cfg.get("journals", [])]
     if cfg.get("fetch", {}).get("arxiv"):
@@ -45,6 +49,7 @@ def _payload(papers: list[dict], cfg: dict) -> dict:
                  "subtitle": site.get("subtitle", ""),
                  "window_days": site.get("window_days", 14)},
         "journals": journals,
+        "total": total,
         "papers": slim,
     }
 
@@ -60,6 +65,8 @@ def build(cfg: dict) -> str:
             .replace("__TITLE__", payload["site"]["title"])
             .replace("__SUBTITLE__", payload["site"]["subtitle"])
             .replace("__WINDOW__", str(payload["site"]["window_days"]))
+            .replace("__LIMIT_NOTE__", "" if payload["total"] <= len(payload["papers"])
+                     else f"（页面显示最近 {len(payload['papers'])} 篇，共 {payload['total']} 篇）")
             .replace("__BUILT_HUMAN__", dt.datetime.now().strftime("%Y-%m-%d %H:%M"))
             .replace("__DATA__", data_json))
 

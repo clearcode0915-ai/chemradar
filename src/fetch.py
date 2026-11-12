@@ -134,7 +134,9 @@ def fetch_journal(journal: dict, since: dt.date, mailto: str, rows: int = 500) -
             "ts": int(stamp.timestamp()),
             "date": stamp.date().isoformat(),
             "edate": edate,          # True = 日期其实是 DOI 注册日，不是出版日
-            "asap": bool(online and not volume and not page),
+            # ASAP 是 ACS 的说法：无卷号页码且已在线。PRL 同样是「无卷页码」，
+            # 但它不是 ASAP，所以必须限定 10.1021 前缀。
+            "asap": bool(online and not volume and not page and doi.startswith("10.1021/")),
             "oa": _is_oa(it),
             "pre": False,
             "abs": clean_markup(it.get("abstract") or ""),
