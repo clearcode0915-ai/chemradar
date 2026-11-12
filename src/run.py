@@ -53,6 +53,14 @@ def main() -> int:
 
     history = read_json(DATA / "papers.json", {"papers": []}).get("papers", [])
     papers = fetch.merge(fresh, history, keep)
+    # 期刊从 config 里删掉后，历史数据里可能还留着它的旧条目——顺手剔掉
+    allowed = {j["label"] for j in cfg.get("journals", [])}
+    if cfg.get("fetch", {}).get("arxiv"):
+        allowed.add("arXiv")
+    keep_papers = [p for p in papers if p["j"] in allowed]
+    if len(keep_papers) != len(papers):
+        log(f"▸ 剔除已从配置移除的期刊条目 {len(papers) - len(keep_papers)} 篇")
+    papers = keep_papers
     log(f"▸ 合并后共 {len(papers)} 篇（含历史 {len(history)} 篇）")
 
     if (cfg.get("covers", {}).get("mode") or "auto").lower() != "off":
