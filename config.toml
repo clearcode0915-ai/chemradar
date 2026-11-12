@@ -21,6 +21,22 @@ arxiv_categories = ["physics.chem-ph"]
 # auto = 有 RSS 真图就用真图，没有则用生成的占位封面；off = 卡片不带封面
 mode = "auto"
 
+[filter]
+# 期刊前置内容不是研究论文，默认剔除。下面是从实际数据里归纳出来的标题形态，
+# 想保留某类（比如封面）就从列表里删掉对应那一行。
+drop_titles = [
+  '^(issue\s+)?(editorial\s+)?masthead$',
+  'issue\s+publication\s+information',
+  '^issue\s+information$',
+  '^(inside\s+)?(front|back)\s+cover$',
+  '^contents\s+list$',
+  '^table\s+of\s+contents$',
+  '^in\s+this\s+issue$',
+  '^front\s+matter$',
+]
+# 无作者且无摘要的条目一律视为非研究内容（前置内容几乎都长这样）
+drop_anonymous = true
+
 [translate]
 backend = "mymemory"       # mymemory | none
 email = ""                 # 填邮箱后额度从 5000 → 50000 字符/天（强烈建议填）

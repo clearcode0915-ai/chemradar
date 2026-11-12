@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import build, fetch, translate  # noqa: E402
+from src import build, fetch, filters, translate  # noqa: E402
 from src import covers as covers_mod  # noqa: E402
 from src.util import DATA, load_config, log, read_json, write_json  # noqa: E402
 
@@ -62,6 +62,11 @@ def main() -> int:
         log(f"▸ 剔除已从配置移除的期刊条目 {len(papers) - len(keep_papers)} 篇")
     papers = keep_papers
     log(f"▸ 合并后共 {len(papers)} 篇（含历史 {len(history)} 篇）")
+
+    papers, dropped = filters.apply(papers, cfg)
+    if dropped:
+        kinds = "、".join(sorted({(d.get("title") or "")[:28] for d in dropped})[:4])
+        log(f"▸ 剔除期刊前置内容 {len(dropped)} 篇（如 {kinds}）")
 
     if (cfg.get("covers", {}).get("mode") or "auto").lower() != "off":
         log("▸ 抓取目录图（TOC graphic）")
