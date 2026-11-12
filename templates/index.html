@@ -398,7 +398,7 @@ footer .sep{margin:0 7px;opacity:.5}
     const more = $('#more');
     more.hidden = rest <= 0;
     if(rest > 0) more.textContent = `继续加载（还有 ${rest} 篇）`;
-    const today = P.filter(p => now() - p.ts < 86400).length;
+    const today = items.filter(p => now() - p.ts < 86400).length;   // 跟着筛选走，口径与列表一致
     const only = [...state.j][0];
     $('#hint').textContent = `匹配 ${items.length} 篇 · 今日新增 ${today} 篇` + (only ? ` · 只看 ${only}` : '');
     chips();
