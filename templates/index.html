@@ -399,7 +399,8 @@ footer .sep{margin:0 7px;opacity:.5}
     more.hidden = rest <= 0;
     if(rest > 0) more.textContent = `继续加载（还有 ${rest} 篇）`;
     const today = P.filter(p => now() - p.ts < 86400).length;
-    $('#hint').textContent = `匹配 ${items.length} 篇 · 今日新增 ${today} 篇`;
+    const only = [...state.j][0];
+    $('#hint').textContent = `匹配 ${items.length} 篇 · 今日新增 ${today} 篇` + (only ? ` · 只看 ${only}` : '');
     chips();
   }
 
@@ -422,8 +423,9 @@ footer .sep{margin:0 7px;opacity:.5}
   $('#chips').addEventListener('click', e => {
     const b = e.target.closest('.chip'); if(!b) return;
     const j = b.dataset.j;
-    if(!j) state.j.clear();
-    else if(state.j.has(j)) state.j.delete(j); else state.j.add(j);
+    // 单选：点哪本就只看哪本；再点一次当前这本 = 回到全部
+    if(!j || (state.j.size === 1 && state.j.has(j))) state.j.clear();
+    else { state.j.clear(); state.j.add(j); }
     state.shown = 30; render();
   });
   $('#range').addEventListener('click', e => {
