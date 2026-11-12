@@ -398,6 +398,8 @@ footer .sep{margin:0 7px;opacity:.5}
   /* 主题 */
   const saved = localStorage.getItem(THEME_KEY);
   if(saved) document.documentElement.dataset.theme = saved;
+  else if(window.matchMedia('(prefers-color-scheme: light)').matches)
+    document.documentElement.dataset.theme = 'light';   // 跟随系统，没设置过时用浅色
   $('#theme').addEventListener('click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
