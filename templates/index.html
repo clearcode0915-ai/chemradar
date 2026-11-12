@@ -107,6 +107,7 @@ main{padding:22px 0 60px}
 .tag.asap{color:var(--ac2);border-color:color-mix(in srgb,var(--ac) 40%,transparent);background:color-mix(in srgb,var(--ac) 10%,transparent)}
 .tag.oa{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 38%,transparent)}
 .ago{margin-left:auto;color:var(--tx3);font-variant-numeric:tabular-nums}
+.ago .ap{opacity:.6;margin-right:1px}
 .star{border:0;background:transparent;color:var(--tx3);cursor:pointer;font-size:15px;line-height:1;padding:2px 0 2px 4px;transition:.15s}
 .star:hover{color:var(--mark)}
 .star.on{color:var(--mark)}
@@ -351,7 +352,7 @@ footer .sep{margin:0 7px;opacity:.5}
       <div class="meta">
         <span class="jb" style="color:${j.color};background:${hexA(j.color,.14)};border-color:${hexA(j.color,.42)}" title="${esc((JMAP.get(p.j)||{}).name||p.j)}">${esc(p.j)}</span>
         ${tags.join('')}
-        <span class="ago" title="${dstr}">${ago(p.ts)}</span>
+        <span class="ago" title="${dstr}${p.edate ? '（DOI 注册日，非出版日）' : ''}">${p.edate ? '<span class="ap">≈</span>' : ''}${ago(p.ts)}</span>
         <button class="star ${stars.has(p.id)?'on':''}" data-star="${esc(p.id)}" aria-label="收藏">${stars.has(p.id)?'★':'☆'}</button>
       </div>
       <div class="head">

@@ -26,18 +26,24 @@ ATOM = {"a": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/a
 
 
 # ────────────────────────────── 小工具 ──────────────────────────────
-def _date_parts(item: dict, key: str) -> dt.datetime | None:
+def _date_parts(item: dict, key: str) -> tuple[dt.datetime | None, int]:
+    """返回 (时间, 精度)；精度 1=只到年、2=到月、3=到日。
+
+    RSC 等出版方常只给年份，硬按 1 月 1 日算会把这些「新文章」误判成半年前，
+    进而被历史窗口过滤掉——所以精度必须一起返回。
+    """
     parts = (item.get(key) or {}).get("date-parts") or [[None]]
     ymd = parts[0] if parts else [None]
     if not ymd or not ymd[0]:
-        return None
+        return None, 0
     y = int(ymd[0])
     m = int(ymd[1]) if len(ymd) > 1 and ymd[1] else 1
     d = int(ymd[2]) if len(ymd) > 2 and ymd[2] else 1
+    precision = len([x for x in ymd[:3] if x])
     try:
-        return dt.datetime(y, m, d, tzinfo=dt.timezone.utc)
+        return dt.datetime(y, m, d, tzinfo=dt.timezone.utc), precision
     except ValueError:
-        return None
+        return None, 0
 
 
 def _norm_title(title: str) -> str:
@@ -103,11 +109,19 @@ def fetch_journal(journal: dict, since: dt.date, mailto: str, rows: int = 500) -
         if sub and sub.lower() not in title.lower():
             title = f"{title}: {sub}"
 
-        online = _date_parts(it, "published-online")
-        issued = _date_parts(it, "issued")
-        created = _date_parts(it, "created")
-        stamp = online or issued or created
-        if stamp is None:
+        online, p_on = _date_parts(it, "published-online")
+        issued, p_is = _date_parts(it, "issued")
+        created, _ = _date_parts(it, "created")
+        # 优先用精确到日的出版日期；只有年份的日期不可信，退回 DOI 注册时间
+        if online and p_on >= 2:
+            stamp, edate = online, False
+        elif issued and p_is >= 2:
+            stamp, edate = issued, False
+        elif created:
+            stamp, edate = created, True
+        elif online or issued:
+            stamp, edate = (online or issued), True
+        else:
             continue
 
         volume, page = it.get("volume"), it.get("page")
@@ -120,6 +134,7 @@ def fetch_journal(journal: dict, since: dt.date, mailto: str, rows: int = 500) -
             "jname": clean_markup((it.get("container-title") or [journal["name"]])[0]),
             "ts": int(stamp.timestamp()),
             "date": stamp.date().isoformat(),
+            "edate": edate,          # True = 日期其实是 DOI 注册日，不是出版日
             "asap": bool(online and not volume and not page),
             "oa": _is_oa(it),
             "pre": False,
@@ -184,6 +199,7 @@ def fetch_arxiv(categories: list[str], since: dt.date, max_results: int = 400) -
             "jname": "arXiv preprint",
             "ts": int(stamp.timestamp()),
             "date": stamp.date().isoformat(),
+            "edate": edate,          # True = 日期其实是 DOI 注册日，不是出版日
             "asap": False,
             "oa": True,
             "pre": True,

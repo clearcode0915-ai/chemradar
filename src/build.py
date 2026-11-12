@@ -31,6 +31,7 @@ def _payload(papers: list[dict], cfg: dict) -> dict:
             "authors": p.get("authors") or [],
             "j": p["j"],
             "ts": p["ts"],
+            "edate": bool(p.get("edate")),
             "asap": bool(p.get("asap")),
             "oa": bool(p.get("oa")),
             "pre": bool(p.get("pre")),
