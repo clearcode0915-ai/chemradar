@@ -67,6 +67,25 @@ python src/run.py --pace 1.0      # 放慢翻译节奏（被限流时用）
 想给别的刊加封面源，在对应 `[[journals]]` 里补一行 `rss = "..."` 即可；
 如果该刊 RSS 里没有图，就自动回落到生成封面。`[covers] mode = "off"` 可以彻底关掉封面。
 
+## 过滤掉的非研究条目
+
+Crossref 里混着一批「期刊前置内容」，它们同样是 `type:journal-article`，所以会污染列表：
+
+| 标题 | 是什么 |
+|---|---|
+| `Issue Editorial Masthead` | 编委会名单 |
+| `Issue Publication Information` / `Issue Information` | 出版信息、版权页 |
+| `Front cover` / `Back cover` / `Inside front cover` | 封面 |
+| `Contents list` / `Table of contents` | 目录页 |
+
+`src/filters.py` 用两条规则剔除：
+
+1. **标题正则**：清单写在 `config.toml` 的 `[filter] drop_titles` 里，想保留某类删掉对应行即可；
+2. **结构规则**：`drop_anonymous = true` 时，**无作者且无摘要**的条目一律视为非研究内容——
+   前置内容几乎都长这样，而真论文一定有作者。这条能挡住清单里没列到的新花样。
+
+被剔除的条目会在日志里打印数量与前几条标题，方便核对有没有误伤。
+
 ## 常见问题
 
 **为什么有的条目没有中文标题？**
