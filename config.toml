@@ -96,12 +96,6 @@ name = "npj Comput. Mater."
 color = "#5DCAA5"
 
 [[journals]]
-issn = "2635-098X"
-label = "DigDisc"
-name = "Digital Discovery"
-color = "#85B7EB"
-
-[[journals]]
 issn = "1759-0876"
 label = "WIREs"
 name = "WIREs Comput. Mol. Sci."
