@@ -12,7 +12,9 @@ acs.silverchair-cdn.com，URL 形如
 from __future__ import annotations
 
 import re
+import threading
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 
 from src.util import http_get, log
 
@@ -73,31 +75,54 @@ def parse_feed(raw: bytes) -> dict[str, str]:
     return out
 
 
-def collect(cfg: dict) -> dict[str, str]:
-    """遍历配置里带 rss 的期刊，汇总 {doi: 封面URL}。"""
-    covers: dict[str, str] = {}
-    total_items = total_img = 0
-    for journal in cfg.get("journals", []):
-        url = (journal.get("rss") or "").strip()
-        if not url:
-            continue
-        label = journal["label"]
+def _host_of(url: str) -> str:
+    return url.split("//", 1)[-1].split("/", 1)[0].lower()
+
+
+def collect(cfg: dict, workers: int = 6, timeout: int = 12) -> dict[str, str]:
+    """并发拉取各刊 RSS；同一域名只要有一个不通，就跳过该域后续的刊。
+
+    实测出版方站点对机房 IP 常直接不通，逐个等超时会让整个任务白等几分钟。
+    """
+    jobs = [(j, (j.get("rss") or "").strip()) for j in cfg.get("journals", [])]
+    jobs = [(j, u) for j, u in jobs if u]
+    if not jobs:
+        log("  · 封面：未配置 RSS，全部使用生成封面")
+        return {}
+
+    dead: set[str] = set()
+    lock = threading.Lock()
+
+    def one(job):
+        journal, url = job
+        host = _host_of(url)
+        with lock:
+            if host in dead:
+                return journal["label"], None, "skip"
         try:
-            raw = http_get(url, timeout=30, retries=1,
+            raw = http_get(url, timeout=timeout, retries=0,
                            accept="application/rss+xml, application/xml;q=0.9, */*;q=0.8")
         except Exception as exc:
-            log(f"  ! {label} 的 RSS 不可达（{type(exc).__name__}），跳过封面")
-            continue
-        got = parse_feed(raw)
-        have = sum(1 for v in got.values() if v)
-        total_items += len(got)
-        total_img += have
-        log(f"  · {label:8s} RSS {len(got):>3} 条，带图 {have:>3} 条")
-        for doi, img in got.items():
-            if img:
-                covers[doi] = img
+            with lock:
+                dead.add(host)
+            return journal["label"], None, type(exc).__name__
+        return journal["label"], parse_feed(raw), ""
+
+    covers: dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for label, got, err in pool.map(one, jobs):
+            if got is None:
+                if err == "skip":
+                    log(f"  · {label:8s} 跳过（同域已判定不可达）")
+                else:
+                    log(f"  ! {label:8s} RSS 不可达（{err}）")
+                continue
+            have = sum(1 for v in got.values() if v)
+            log(f"  · {label:8s} RSS {len(got):>3} 条，带图 {have:>3} 条")
+            covers.update({k: v for k, v in got.items() if v})
+
     if covers:
-        log(f"  · 封面：{len(covers)} 条可用（共扫 {total_items} 条 RSS）")
-    elif total_items == 0:
-        log("  · 封面：未配置 RSS 或全部不可达，页面将使用生成封面")
+        log(f"  · 封面：{len(covers)} 条可用")
+    else:
+        log("  · 封面：无可用真图，全部使用生成封面")
     return covers

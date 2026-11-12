@@ -139,7 +139,7 @@ def translate_papers(papers: list[dict], cfg: dict, budget: int | None = None,
         used += len(title)
         todo.append((paper["id"], title))
 
-    done = fails = 0
+    done = fails = slept = 0
     for pid, title in todo:
         zh = translate_title(title, lang, email)
         if zh:
@@ -149,12 +149,16 @@ def translate_papers(papers: list[dict], cfg: dict, budget: int | None = None,
             fails = 0
             if done % 20 == 0:
                 write_json(CACHE, cache)
-        else:
-            fails += 1
-            if fails >= 5:                    # 被限流或配额耗尽，别再撞墙
-                log(f"  · 连续 {fails} 次失败，本轮提前收工")
-                break
-        time.sleep(pace)
+            time.sleep(pace)
+            continue
+        # 失败：退避后再试，别因为一次 429 就放弃剩下的几百条
+        fails += 1
+        wait = min(45, 5 * 2 ** (fails - 1))
+        if fails >= 6 or slept + wait > 300 or _exhausted.is_set():
+            log(f"  · 连续 {fails} 次失败（已退避 {slept}s），本轮提前收工")
+            break
+        time.sleep(wait)
+        slept += wait
 
     # 只保留仍在用的译文，避免缓存无限增长
     alive = {_hash(p["title"]) for p in papers}
