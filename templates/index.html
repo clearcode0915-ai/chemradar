@@ -126,6 +126,13 @@ main{padding:22px 0 60px}
 .doi{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--tx3);letter-spacing:-.01em}
 
 #sentinel{height:1px}
+#totop{position:fixed;right:22px;bottom:22px;z-index:30;width:40px;height:40px;border-radius:11px;
+  border:1px solid var(--bd);background:var(--bg2);color:var(--tx2);display:grid;place-items:center;
+  cursor:pointer;opacity:0;transform:translateY(8px);pointer-events:none;backdrop-filter:blur(10px);
+  transition:opacity .18s,transform .18s,border-color .15s,color .15s}
+#totop.on{opacity:1;transform:none;pointer-events:auto}
+#totop:hover{color:var(--tx);border-color:var(--bd2)}
+#totop svg{width:16px;height:16px}
 .empty{text-align:center;padding:70px 20px;color:var(--tx3)}
 .empty p{margin:0 0 14px;font-size:14px}
 .empty button{padding:7px 14px;border:1px solid var(--bd2);border-radius:8px;background:var(--card);color:var(--tx2);font:inherit;font-size:13px;cursor:pointer}
@@ -143,6 +150,7 @@ footer .sep{margin:0 7px;opacity:.5}
   .card h2{font-size:15px}
   .zh{font-size:15px}
   .hint{margin-left:0;width:100%}
+  #totop{right:14px;bottom:14px;width:38px;height:38px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -190,6 +198,10 @@ footer .sep{margin:0 7px;opacity:.5}
   <span class="sep">·</span> 生成于 __BUILT_HUMAN__<span class="sep">·</span> 窗口 __WINDOW__ 天__LIMIT_NOTE__
   <br>点击标题跳转出版方全文页；摘要默认折叠，点「摘要」展开原文。
 </div></footer>
+
+<button id="totop" aria-label="返回顶部" title="返回顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
 
 <script id="payload" type="application/json">__DATA__</script>
 <script>
@@ -378,12 +390,14 @@ footer .sep{margin:0 7px;opacity:.5}
     if(!j || (state.j.size === 1 && state.j.has(j))) state.j.clear();
     else { state.j.clear(); state.j.add(j); }
     apply();
+    window.scrollTo({ top: 0, behavior: 'auto' });   // 换刊后回到页首
   });
   $('#range').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
     state.days = Number(b.dataset.d);
     [...$('#range').children].forEach(x => x.classList.toggle('on', x === b));
     apply();
+    window.scrollTo({ top: 0, behavior: 'auto' });
   });
   $('#only-star').addEventListener('change', e => {
     state.star = e.target.checked;
@@ -420,6 +434,13 @@ footer .sep{margin:0 7px;opacity:.5}
     if(e.key === '/' && document.activeElement !== $('#q')){ e.preventDefault(); $('#q').focus(); }
     if(e.key === 'Escape' && document.activeElement === $('#q')){ $('#q').blur(); }
   });
+
+  /* 返回顶部 */
+  const totop = $('#totop');
+  const syncTotop = () => totop.classList.toggle('on', window.scrollY > 700);
+  totop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  window.addEventListener('scroll', syncTotop, { passive: true });
+  syncTotop();
 
   /* 主题 */
   const saved = localStorage.getItem(THEME_KEY);
