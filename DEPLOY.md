@@ -67,7 +67,6 @@ gh repo create chemradar --public --source=. --push
 ### 本次更新
 - 条目总数：540
 - 有中文标题：412（其余靠后续运行续译）
-- 有真实封面：0（其余用生成封面）
 - 分刊：JCP 123、JPCC 88、JPCL 78、JPCB 61、JCIM 55、JCTC 51、JPCA 46、npjCM 14 …
 ```
 
@@ -101,7 +100,6 @@ Settings → Pages → Source 手动选 **GitHub Actions**，再重跑一次。
 | `deploy-pages` 报 `No artifact found` | 前面的 `build` 失败了，先看 build 的日志，别管 deploy |
 | 页面 404 | 刚部署完等 1–2 分钟；还不行看 Settings → Pages 的 Source 是否是 GitHub Actions |
 | 标题全英文 | 日志里找 `仍缺 N 条`：配额用尽或接口限流，等下一次运行会自动续译 |
-| 封面全是晶格图 | `RSS 不可达`，说明出版方 feed 被网络挡住；这是预期降级 |
 | Summary 里条目数 0 | Crossref 被限流，重跑一次即可 |
 
 ---

@@ -17,7 +17,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import build, fetch, filters, translate  # noqa: E402
-from src import covers as covers_mod  # noqa: E402
 from src.util import DATA, load_config, log, read_json, write_json  # noqa: E402
 
 
@@ -71,21 +70,6 @@ def main() -> int:
     if dropped:
         kinds = "、".join(sorted({(d.get("title") or "")[:28] for d in dropped})[:4])
         log(f"▸ 剔除期刊前置内容 {len(dropped)} 篇（如 {kinds}）")
-
-    if (cfg.get("covers", {}).get("mode") or "auto").lower() != "off":
-        log("▸ 抓取目录图（TOC graphic）")
-        covers = covers_mod.collect(cfg)
-        covers.update({k: v for k, v in covers_mod.probe_acs(papers, cfg).items() if v})
-        hit = 0
-        for p in papers:
-            img = covers.get(p.get("doi") or "")
-            if img:
-                p["img"] = img
-                hit += 1
-        log(f"  · 命中 {hit} 篇（其余用生成封面）")
-    else:
-        for p in papers:                   # 封面关闭时不留无用的图片字段
-            p.pop("img", None)
 
     if not args.no_translate:
         log("▸ 翻译标题")

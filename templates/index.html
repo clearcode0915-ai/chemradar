@@ -108,15 +108,7 @@ main{padding:22px 0 60px}
 .star{border:0;background:transparent;color:var(--tx3);cursor:pointer;font-size:15px;line-height:1;padding:2px 0 2px 4px;transition:.15s}
 .star:hover{color:var(--mark)}
 .star.on{color:var(--mark)}
-/* 封面 + 标题同排 */
-.head{display:flex;gap:13px;align-items:flex-start;margin-top:9px}
-.head .t{flex:1;min-width:0}
-.thumb{flex:0 0 92px;width:92px;height:70px;border-radius:8px;overflow:hidden;border:1px solid var(--bd);
-  background:var(--card2);padding:0;display:block;cursor:zoom-in;transition:border-color .15s}
-.thumb:hover{border-color:var(--bd2)}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.thumb.gen{cursor:default;background-repeat:no-repeat;background-size:cover;background-position:center}
-.card h2{margin:0;font-size:16px;line-height:1.45;font-weight:500;letter-spacing:-.01em}
+.card h2{margin:9px 0 0;font-size:16px;line-height:1.45;font-weight:500;letter-spacing:-.01em}
 .card h2 a{background-image:linear-gradient(var(--ac),var(--ac));background-size:0 1px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .25s}
 .card h2 a:hover{background-size:100% 1px}
 .zh{margin:5px 0 0;font-size:13.5px;line-height:1.5;color:var(--tx2)}
@@ -138,15 +130,6 @@ main{padding:22px 0 60px}
 .empty p{margin:0 0 14px;font-size:14px}
 .empty button{padding:7px 14px;border:1px solid var(--bd2);border-radius:8px;background:var(--card);color:var(--tx2);font:inherit;font-size:13px;cursor:pointer}
 
-.lb{position:fixed;inset:0;z-index:100;background:rgba(6,7,10,.88);backdrop-filter:blur(6px);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:46px 24px}
-.lb[hidden]{display:none}
-.lb img{max-width:min(980px,92vw);max-height:78vh;border-radius:10px;background:#fff;display:block}
-.lb .cap{color:#c9cfda;font-size:12.5px;text-align:center;max-width:760px;line-height:1.6}
-.lb .x{position:absolute;top:16px;right:20px;width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.22);
-  background:rgba(255,255,255,.08);color:#e7e9ef;font-size:18px;line-height:1;cursor:pointer}
-.lb .x:hover{background:rgba(255,255,255,.16)}
-
 footer{border-top:1px solid var(--bd);padding:22px 0 40px;font-size:11.5px;color:var(--tx3);line-height:1.9}
 footer a{color:var(--tx2);border-bottom:1px solid var(--bd2)}
 footer .sep{margin:0 7px;opacity:.5}
@@ -158,7 +141,6 @@ footer .sep{margin:0 7px;opacity:.5}
   .hdr-meta .upd{display:none}
   .card{padding:13px 14px 12px}
   .card h2{font-size:15px}
-  .thumb{flex:0 0 76px;width:76px;height:58px}
   .hint{margin-left:0;width:100%}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -200,12 +182,6 @@ footer .sep{margin:0 7px;opacity:.5}
   </div>
 </header>
 
-<div class="lb" id="lb" hidden>
-  <button class="x" id="lb-x" aria-label="关闭">×</button>
-  <img id="lb-img" alt="">
-  <div class="cap" id="lb-cap"></div>
-</div>
-
 <main id="main"><div class="wrap"><div id="list"></div><div id="sentinel" aria-hidden="true"></div><div id="empty" class="empty" hidden><p>没有匹配的文献</p><button id="reset">清空筛选条件</button></div></div></main>
 
 <footer><div class="wrap">
@@ -221,8 +197,6 @@ footer .sep{margin:0 7px;opacity:.5}
   const P = DATA.papers || [];
   const JMAP = new Map((DATA.journals||[]).map(j => [j.label, j]));
   const STAR_KEY = 'lit-radar:stars', THEME_KEY = 'lit-radar:theme';
-  const COVERS = DATA.covers || 'auto';   // auto | off
-  const THUMB = DATA.thumb_proxy || '';   // 缩略图代理模板，含 {url}
   let stars = new Set();
   try { stars = new Set(JSON.parse(localStorage.getItem(STAR_KEY) || '[]')); } catch(e){}
   const state = { q:'', j:new Set(), days:0, star:false };
@@ -294,52 +268,6 @@ footer .sep{margin:0 7px;opacity:.5}
     $('#chips').innerHTML = parts.join('');
   }
 
-  function genCover(p){
-    // 没有 TOC 图时画一张「分子晶格」小图：颜色随期刊，结构随 DOI 哈希，每次渲染稳定
-    const c = (JMAP.get(p.j) || {}).color || '#888780';
-    let h = 2166136261;
-    for (let i = 0; i < p.id.length; i++){ h ^= p.id.charCodeAt(i); h = Math.imul(h, 16777619); }
-    const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return Math.abs(h % 1000) / 1000; };
-    const R = 10, dx = R * 1.5, dy = R * Math.sqrt(3);
-    const hex = (cx, cy) => {
-      const pts = [];
-      for (let i = 0; i < 6; i++){
-        const a = Math.PI / 3 * i - Math.PI / 6;
-        pts.push(`${(cx + R * Math.cos(a)).toFixed(1)},${(cy + R * Math.sin(a)).toFixed(1)}`);
-      }
-      return 'M' + pts.join('L') + 'Z';
-    };
-    let cells = '';
-    for (let row = 0; row < 3; row++){
-      for (let col = 0; col < 4; col++){
-        const cx = 20 + col * dx + (row % 2 ? dx / 2 : 0) + (rnd() - .5) * 4;
-        const cy = 16 + row * dy + (rnd() - .5) * 4;
-        if (rnd() < .42) continue;
-        const filled = rnd() < .3;
-        cells += `<path d="${hex(cx, cy)}" fill="${filled ? c : 'none'}" fill-opacity=".42" ` +
-                 `stroke="${c}" stroke-opacity=".55" stroke-width="1"/>`;
-      }
-    }
-    cells += `<circle cx="${(70 + rnd() * 12).toFixed(0)}" cy="${(10 + rnd() * 8).toFixed(0)}" r="2.2" fill="${c}" fill-opacity=".7"/>`;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 70" width="92" height="70">${cells}</svg>`;
-    return `<div class="thumb gen" style="background-image:url(&quot;data:image/svg+xml,${encodeURIComponent(svg)}&quot;)" aria-hidden="true"></div>`;
-  }
-
-  function thumbUrl(url){
-    if (!THUMB) return url;
-    return THUMB.replace('{url}', encodeURIComponent(url.replace(/^https?:\/\//, '')));
-  }
-
-  function cover(p){
-    if (COVERS === 'off') return '';
-    if (p.img) {
-      return `<button class="thumb" data-img="${esc(p.img)}" data-cap="${esc(p.title)}" title="查看目录图" aria-label="查看目录图">` +
-             `<img src="${esc(thumbUrl(p.img))}" data-orig="${esc(p.img)}" alt="" loading="lazy" decoding="async" ` +
-             `referrerpolicy="no-referrer" onerror="this.onerror=function(){this.parentElement.remove()};this.src=this.dataset.orig"></button>`;
-    }
-    return genCover(p);
-  }
-
   function card(p, ts){
     const j = JMAP.get(p.j) || {color:'#888780'};
     const fresh = now() - p.ts < 86400;
@@ -357,13 +285,8 @@ footer .sep{margin:0 7px;opacity:.5}
         <span class="ago" title="${dstr}${p.edate ? '（DOI 注册日，非出版日）' : ''}">${p.edate ? '<span class="ap">≈</span>' : ''}${ago(p.ts)}</span>
         <button class="star ${stars.has(p.id)?'on':''}" data-star="${esc(p.id)}" aria-label="收藏">${stars.has(p.id)?'★':'☆'}</button>
       </div>
-      <div class="head">
-        ${cover(p)}
-        <div class="t">
-          <h2><a href="${esc(p.url)}" target="_blank" rel="noopener">${hl(p.title, ts)}</a></h2>
-          ${p.zh ? `<p class="zh">${hl(p.zh, ts)}</p>` : ''}
-        </div>
-      </div>
+      <h2><a href="${esc(p.url)}" target="_blank" rel="noopener">${hl(p.title, ts)}</a></h2>
+      ${p.zh ? `<p class="zh">${hl(p.zh, ts)}</p>` : ''}
       ${au ? `<p class="au">${esc(au)}</p>` : ''}
       ${p.abs ? `<div class="ab${openAbs.has(p.id)?' open':''}"><button class="ab-t">摘要 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button><p class="ab-p">${hl(p.abs, ts)}</p></div>` : ''}
       <div class="links">
@@ -467,8 +390,6 @@ footer .sep{margin:0 7px;opacity:.5}
     apply();
   });
   $('#list').addEventListener('click', e => {
-    const th = e.target.closest('.thumb[data-img]');
-    if (th) { openLb(th.dataset.img, th.dataset.cap); return; }
     const s = e.target.closest('.star');
     if(s){
       const id = s.dataset.star;
@@ -494,27 +415,9 @@ footer .sep{margin:0 7px;opacity:.5}
   }
   window.addEventListener('resize', fillViewport);
 
-  const lb = $('#lb'), lbImg = $('#lb-img'), lbCap = $('#lb-cap');
-  function openLb(src, cap){
-    lbImg.src = src; lbCap.textContent = cap || ''; lb.hidden = false;
-    document.documentElement.style.overflow = 'hidden';
-  }
-  function closeLb(){
-    lb.hidden = true; lbImg.removeAttribute('src');
-    document.documentElement.style.overflow = '';
-  }
-  $('#lb-x').addEventListener('click', closeLb);
-  lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
-  $('#reset').addEventListener('click', () => {
-    state.q = ''; state.j.clear(); state.days = 0; state.star = false;
-    $('#q').value = ''; $('#only-star').checked = false; $('#star-f').classList.remove('on');
-    [...$('#range').children].forEach((x,i) => x.classList.toggle('on', i === 3));
-    apply();
-  });
   document.addEventListener('keydown', e => {
     if(e.key === '/' && document.activeElement !== $('#q')){ e.preventDefault(); $('#q').focus(); }
     if(e.key === 'Escape' && document.activeElement === $('#q')){ $('#q').blur(); }
-    if(e.key === 'Escape' && !$('#lb').hidden){ closeLb(); }
   });
 
   /* 主题 */
