@@ -1,4 +1,4 @@
-"""标题翻译层：MyMemory 免费接口 + 哈希缓存 + 单轮字符预算闸 + 并发。
+"""标题翻译层：MyMemory 免费接口 + 哈希缓存 + 单轮字符预算闸。
 
 三条设计原则：
 1. 只翻标题（几十字符），一天 40 篇 ≈ 4500 字符，匿名额度都够用。
@@ -25,7 +25,6 @@ _TOKEN = re.compile(r"[A-Za-z0-9ωΩ()\-+]+")
 _STOP = {"A", "I", "AN", "THE", "OF", "IN", "ON", "TO", "AND", "FOR", "IS", "AS",
          "AT", "BY", "OR", "WE", "IT", "NO", "NOT", "ALL", "CAN", "VIA", "US"}
 
-_lock = threading.Lock()
 _exhausted = threading.Event()   # 配额用尽
 _throttled = threading.Event()   # 被限流（429）
 
@@ -111,7 +110,8 @@ def translate_papers(papers: list[dict], cfg: dict, budget: int | None = None,
     """返回 {paper_id: 中文标题}，并把新译文写进缓存。
 
     顺序执行 + 固定间隔：免费接口按 IP 限流，并发只会换来 429。
-    连续失败 5 次即熔断，已译部分照常落盘（每 20 条存一次，跑一半中断也不白干）。
+    失败按 5/10/20/40s 退避重试，连续 6 次仍失败或退避累计超 300s 则本轮收工；
+    已译部分每 20 条落盘一次，跑一半中断也不白干。
     """
     tcfg = cfg.get("translate", {}) or {}
     if (tcfg.get("backend") or "none").lower() != "mymemory":
@@ -171,17 +171,6 @@ def translate_papers(papers: list[dict], cfg: dict, budget: int | None = None,
         note = "，免费配额已用尽（下次运行续译，或填 translate.email 提到 5 万/天）"
     elif _throttled.is_set():
         note = "，接口限流（下次运行续译）"
-    log(f"  · 翻译：本次新增 {done} 条（{used} 字符 / 预算 {budget}），"
-        f"缓存命中 {hits} 条，仍缺 {missing} 条{note}")
-    return out
-
-    # 只保留仍在用的译文，避免缓存无限增长
-    alive = {_hash(p["title"]) for p in papers}
-    cache = {k: v for k, v in cache.items() if k in alive}
-    write_json(CACHE, cache)
-
-    missing = sum(1 for p in papers if p["id"] not in out)
-    note = "，配额已用尽（下次运行续译）" if _exhausted.is_set() else ""
     log(f"  · 翻译：本次新增 {done} 条（{used} 字符 / 预算 {budget}），"
         f"缓存命中 {hits} 条，仍缺 {missing} 条{note}")
     return out

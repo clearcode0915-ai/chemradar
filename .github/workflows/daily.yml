@@ -51,13 +51,11 @@ jobs:
           d = json.loads(pathlib.Path("data/papers.json").read_text(encoding="utf-8"))
           ps = d["papers"]
           zh = sum(1 for p in ps if p.get("zh"))
-          img = sum(1 for p in ps if p.get("img"))
           import collections
           c = collections.Counter(p["j"] for p in ps)
           print("### 本次更新\n")
           print(f"- 条目总数：**{len(ps)}**")
           print(f"- 有中文标题：{zh}（其余靠后续运行续译）")
-          print(f"- 有真实封面：{img}（其余用生成封面）")
           print("- 分刊：" + "、".join(f"{k} {v}" for k, v in c.most_common()))
           EOF
 

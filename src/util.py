@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import html
 import json
+import os
 import re
 import ssl
 import sys
 import time
 import tomllib
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -26,8 +27,6 @@ def load_config(path: Path | None = None) -> dict:
     with open(path, "rb") as fh:
         cfg = tomllib.load(fh)
     # 环境变量优先，方便在 GitHub Actions 里用 secrets 覆盖
-    import os
-
     if os.environ.get("CROSSREF_MAILTO"):
         cfg.setdefault("fetch", {})["mailto"] = os.environ["CROSSREF_MAILTO"]
     if os.environ.get("MYMEMORY_EMAIL"):
@@ -90,18 +89,11 @@ def clean_markup(text: str) -> str:
         return ""
     text = re.sub(r"<jats:title>.*?</jats:title>", " ", text, flags=re.S | re.I)
     text = re.sub(r"<[^>]+>", " ", text)
-    import html as _html
-
-    text = _html.unescape(text)
+    text = html.unescape(text)
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"^(abstract|摘要)[:：\s]+", "", text, flags=re.I)
     return text
 
 
-def slugify(text: str) -> str:
-    text = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
-    return text or "item"
-
-
 __all__ = ["ROOT", "DATA", "SITE", "TEMPLATES", "load_config", "http_get", "get_json",
-           "read_json", "write_json", "log", "clean_markup", "slugify", "urllib"]
+           "read_json", "write_json", "log", "clean_markup"]

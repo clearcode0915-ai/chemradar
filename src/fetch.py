@@ -18,8 +18,8 @@ ARXIV = "https://export.arxiv.org/api/query"
 
 SELECT = ",".join([
     "DOI", "title", "subtitle", "author", "abstract", "container-title", "issued",
-    "created", "published-online", "published-print", "volume", "issue", "page",
-    "type", "is-referenced-by-count", "URL", "license", "link", "publisher",
+    "created", "published-online", "published-print", "volume", "page",
+    "type", "URL", "license", "link",
 ])
 
 ATOM = {"a": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
@@ -131,7 +131,6 @@ def fetch_journal(journal: dict, since: dt.date, mailto: str, rows: int = 500) -
             "title": title,
             "authors": _authors(it),
             "j": label,
-            "jname": clean_markup((it.get("container-title") or [journal["name"]])[0]),
             "ts": int(stamp.timestamp()),
             "date": stamp.date().isoformat(),
             "edate": edate,          # True = 日期其实是 DOI 注册日，不是出版日
@@ -141,7 +140,6 @@ def fetch_journal(journal: dict, since: dt.date, mailto: str, rows: int = 500) -
             "abs": clean_markup(it.get("abstract") or ""),
             "pdf": _pdf_link(it),
             "url": it.get("URL") or f"https://doi.org/{doi}",
-            "cites": it.get("is-referenced-by-count") or 0,
             "src": "crossref",
         })
     log(f"  · {label:8s} {len(out):>4} 篇")
@@ -206,7 +204,6 @@ def fetch_arxiv(categories: list[str], since: dt.date, max_results: int = 400) -
             "abs": clean_markup(entry.findtext("a:summary", default="", namespaces=ATOM)),
             "pdf": pdf_url or abs_url.replace("/abs/", "/pdf/"),
             "url": doi and f"https://doi.org/{doi}" or abs_url,
-            "cites": 0,
             "src": "arxiv",
         })
     log(f"  · {'arXiv':8s} {len(out):>4} 篇")
@@ -225,7 +222,6 @@ def merge(fresh: list[dict], history: list[dict], keep_days: int) -> list[dict]:
         if twin and twin != p["id"] and twin in by_id:
             target = by_id[twin]
             if p["src"] == "arxiv" and target["src"] == "crossref":
-                target["arxiv"] = p.get("arxiv", "")
                 target["pdf"] = target.get("pdf") or p.get("pdf", "")
                 target["pre"] = True
                 continue

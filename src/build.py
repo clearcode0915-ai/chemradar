@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import re
 
 from src.util import DATA, SITE, TEMPLATES, log, read_json, write_json
 

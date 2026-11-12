@@ -52,7 +52,11 @@ def main() -> int:
     log(f"▸ 本轮抓到 {len(fresh)} 条")
 
     history = read_json(DATA / "papers.json", {"papers": []}).get("papers", [])
+    prev_zh = {p["id"]: p["zh"] for p in history if p.get("zh")}
     papers = fetch.merge(fresh, history, keep)
+    for p in papers:                       # --no-translate 时也不丢以前译好的标题
+        if not p.get("zh") and p["id"] in prev_zh:
+            p["zh"] = prev_zh[p["id"]]
     # 期刊从 config 里删掉后，历史数据里可能还留着它的旧条目——顺手剔掉
     allowed = {j["label"] for j in cfg.get("journals", [])}
     if cfg.get("fetch", {}).get("arxiv"):
@@ -79,6 +83,9 @@ def main() -> int:
                 p["img"] = img
                 hit += 1
         log(f"  · 命中 {hit} 篇（其余用生成封面）")
+    else:
+        for p in papers:                   # 封面关闭时不留无用的图片字段
+            p.pop("img", None)
 
     if not args.no_translate:
         log("▸ 翻译标题")
@@ -87,7 +94,6 @@ def main() -> int:
         for p in papers:
             if p["id"] in zh:
                 p["zh"] = zh[p["id"]]
-            p.pop("zh_pending", None)
 
     write_json(DATA / "papers.json", {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
