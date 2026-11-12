@@ -199,7 +199,7 @@ def fetch_arxiv(categories: list[str], since: dt.date, max_results: int = 400) -
             "jname": "arXiv preprint",
             "ts": int(stamp.timestamp()),
             "date": stamp.date().isoformat(),
-            "edate": edate,          # True = 日期其实是 DOI 注册日，不是出版日
+            "edate": False,          # 预印本提交日期就是准确日期
             "asap": False,
             "oa": True,
             "pre": True,

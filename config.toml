@@ -13,13 +13,13 @@ keep_days = 90       # data/papers.json 里保留多久的历史，超出即丢�
 mailto = "you@example.com"
 rows = 500           # 每个期刊单次请求条数（Crossref 上限 1000）
 
-# arXiv 预印本源：默认关闭，如果你想额外收 physics.chem-ph 预印本，改成 true
-arxiv = false
+# arXiv 预印本源：抓 physics.chem-ph 的近期预印本
+arxiv = true
 arxiv_categories = ["physics.chem-ph"]
 
 [covers]
 # auto = 有真图就用真图，没有则用生成的占位封面；off = 卡片不带封面
-mode = "auto"
+mode = "off"
 # ACS 的目录图可以直接问 CDN 反推（不校验签名）。关掉就只用 RSS + 生成封面。
 probe_acs = true
 probe_max_index = 16     # 从最大图号往下试，命中即停

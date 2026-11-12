@@ -7,6 +7,8 @@
 - 零第三方依赖：只用 Python 标准库，Actions 里不需要 `pip install`
 - 不爬出版方页面：数据取自 [Crossref](https://www.crossref.org/) 官方接口（摘要由出版方 deposit，实测 12 种期刊全都有）
 - 只翻标题：一天 40 篇标题约 4500 字符，MyMemory 免费额度足够，成本≈0
+- 期刊流 + arXiv `physics.chem-ph` 预印本（按标题与正式发表条目合并去重）
+- 卡片不带图（`[covers] mode = "off"`）；想开封面就改成 `auto`，见下节
 
 ## 本地运行
 
@@ -44,7 +46,7 @@ python src/run.py --pace 1.0      # 放慢翻译节奏（被限流时用）
 | `[site] window_days` | 每次抓取回溯天数，默认 14；首跑会把这段窗口全抓下来 |
 | `[site] keep_days` | `data/papers.json` 保留多久历史 |
 | `[fetch] mailto` | Crossref 联系邮箱，建议填 |
-| `[fetch] arxiv` | 改成 `true` 可额外收 `physics.chem-ph` 预印本（按标题与正式发表条目合并去重） |
+| `[fetch] arxiv` | 是否收 `physics.chem-ph` 预印本，默认 `true` |
 | `[translate] email` | MyMemory 邮箱，填了额度 ×10 |
 | `[translate] max_chars_per_run` | 单轮字符预算，超出部分下次自动续译 |
 | `[covers] mode` | `auto` 有真图用真图、没有则生成封面；`off` 关闭封面 |

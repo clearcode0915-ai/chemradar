@@ -36,7 +36,7 @@ def _payload(papers: list[dict], cfg: dict) -> dict:
             "oa": bool(p.get("oa")),
             "pre": bool(p.get("pre")),
             "abs": abs_txt,
-            "img": p.get("img") or "",
+            "img": "" if (cfg.get("covers", {}) or {}).get("mode") == "off" else (p.get("img") or ""),
             "pdf": p.get("pdf") or "",
             "url": p.get("url") or (f"https://doi.org/{p['doi']}" if p.get("doi") else ""),
         })
