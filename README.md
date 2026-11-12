@@ -47,9 +47,25 @@ python src/run.py --pace 1.0      # 放慢翻译节奏（被限流时用）
 | `[fetch] arxiv` | 改成 `true` 可额外收 `physics.chem-ph` 预印本（按标题与正式发表条目合并去重） |
 | `[translate] email` | MyMemory 邮箱，填了额度 ×10 |
 | `[translate] max_chars_per_run` | 单轮字符预算，超出部分下次自动续译 |
-| `[[journals]]` | 期刊清单：`issn` / `label`（角标文字）/ `name` / `color`（角标色） |
+| `[covers] mode` | `auto` 有真图用真图、没有则生成封面；`off` 关闭封面 |
+| `[[journals]]` | 期刊清单：`issn` / `label`（角标文字）/ `name` / `color`（角标色）/ `rss`（可选，封面源） |
 
 增删期刊只要改这一段，ISSN 可在 crossref.org 搜索期刊页查到。
+
+## 封面（TOC 图）
+
+卡片左侧的小图有两种来源：
+
+1. **出版方的目录图（TOC graphic）**：只能从期刊 RSS 里拿。ACS 六刊已在 `config.toml`
+   里配好 `rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=xxx"`，
+   解析出 DOI→图片地址后按 DOI 挂到对应条目上。图片本体托管在
+   `acs.silverchair-cdn.com`（可直连、不需要登录），但**RSS 页面本身在部分网络下不可达**
+   （国内直连 `pubs.acs.org` 常被阻断）。不可达时日志会写一行 `RSS 不可达`，流程继续。
+2. **生成封面**：没有真图时，用期刊色 + DOI 哈希画一张分子晶格小图（纯内联 SVG，
+   零网络请求、零额外体积），保证版面质感一致。点真图可以放大（灯箱），生成封面不可点。
+
+想给别的刊加封面源，在对应 `[[journals]]` 里补一行 `rss = "..."` 即可；
+如果该刊 RSS 里没有图，就自动回落到生成封面。`[covers] mode = "off"` 可以彻底关掉封面。
 
 ## 常见问题
 
@@ -59,6 +75,10 @@ MyMemory 免费额度有限，首次全量补全需要跑 1–2 次（或在 con
 
 **摘要怎么来的？**
 Crossref 里出版方 deposit 的 JATS 摘要，去标签后原样展示，没有二次加工；摘要不做翻译。
+
+**为什么很多封面是"晶格图"而不是论文里的图？**
+那些是生成封面。真图依赖出版方 RSS，RSS 一旦不可达（或该刊不提供图），就自动回落。
+在 GitHub Actions 上跑更容易拿到真图，本地网络打不开 `pubs.acs.org` 时全是生成封面，属正常现象。
 
 **`ASAP` 角标是什么意思？**
 Crossref 里没有卷号/页码、只有在线发表时间的条目，即 ACS 的 Articles ASAP（定稿前在线）。

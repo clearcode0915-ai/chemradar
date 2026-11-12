@@ -17,6 +17,10 @@ rows = 500           # 每个期刊单次请求条数（Crossref 上限 1000）
 arxiv = false
 arxiv_categories = ["physics.chem-ph"]
 
+[covers]
+# auto = 有 RSS 真图就用真图，没有则用生成的占位封面；off = 卡片不带封面
+mode = "auto"
+
 [translate]
 backend = "mymemory"       # mymemory | none
 email = ""                 # 填邮箱后额度从 5000 → 50000 字符/天（强烈建议填）
@@ -30,36 +34,42 @@ issn = "1549-9618"
 label = "JCTC"
 name = "J. Chem. Theory Comput."
 color = "#7F77DD"
+rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jctcce"
 
 [[journals]]
 issn = "1549-9596"
 label = "JCIM"
 name = "J. Chem. Inf. Model."
 color = "#1D9E75"
+rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jcimcl"
 
 [[journals]]
 issn = "1089-5639"
 label = "JPCA"
 name = "J. Phys. Chem. A"
 color = "#378ADD"
+rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpcafh"
 
 [[journals]]
 issn = "1948-7185"
 label = "JPCL"
 name = "J. Phys. Chem. Lett."
 color = "#EF9F27"
+rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpclcd"
 
 [[journals]]
 issn = "1520-6106"
 label = "JPCB"
 name = "J. Phys. Chem. B"
 color = "#D4537E"
+rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpcbfk"
 
 [[journals]]
 issn = "1932-7447"
 label = "JPCC"
 name = "J. Phys. Chem. C"
 color = "#D85A30"
+rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpccck"
 
 [[journals]]
 issn = "0021-9606"

@@ -35,6 +35,7 @@ def _payload(papers: list[dict], cfg: dict) -> dict:
             "oa": bool(p.get("oa")),
             "pre": bool(p.get("pre")),
             "abs": abs_txt,
+            "img": p.get("img") or "",
             "pdf": p.get("pdf") or "",
             "url": p.get("url") or (f"https://doi.org/{p['doi']}" if p.get("doi") else ""),
         })
@@ -45,6 +46,7 @@ def _payload(papers: list[dict], cfg: dict) -> dict:
                  "subtitle": site.get("subtitle", ""),
                  "window_days": site.get("window_days", 14)},
         "journals": journals,
+        "covers": (cfg.get("covers", {}) or {}).get("mode", "auto"),
         "papers": slim,
     }
 
