@@ -1,0 +1,98 @@
+# ═══════════════════════════════════════════════════════════════
+#  lit-radar 配置 · 改完直接重新运行 python src/run.py 即可
+# ═══════════════════════════════════════════════════════════════
+
+[site]
+title = "ChemRadar"
+subtitle = "计算化学文献速递 · latest computational chemistry papers"
+window_days = 14     # 每次抓取回溯多少天（首次运行会把这段窗口全抓下来）
+keep_days = 90       # data/papers.json 里保留多久的历史，超出即丢弃
+
+[fetch]
+# 建议填你的邮箱：Crossref 会把你放进 polite pool，响应更快也更少被限流
+mailto = "you@example.com"
+rows = 500           # 每个期刊单次请求条数（Crossref 上限 1000）
+
+# arXiv 预印本源：默认关闭，如果你想额外收 physics.chem-ph 预印本，改成 true
+arxiv = false
+arxiv_categories = ["physics.chem-ph"]
+
+[translate]
+backend = "mymemory"       # mymemory | none
+email = ""                 # 填邮箱后额度从 5000 → 50000 字符/天（强烈建议填）
+lang = "zh-CN"
+max_chars_per_run = 0      # 0 = 自动：有 email 用 45000，没有则 4500；也可手填上限
+# 只翻标题，日常一天 40 篇标题约 4500 字符，正落在免费额度内
+
+# ── 期刊清单（想增减直接改这一段，ISSN 可在 crossref.org 上查）───────
+[[journals]]
+issn = "1549-9618"
+label = "JCTC"
+name = "J. Chem. Theory Comput."
+color = "#7F77DD"
+
+[[journals]]
+issn = "1549-9596"
+label = "JCIM"
+name = "J. Chem. Inf. Model."
+color = "#1D9E75"
+
+[[journals]]
+issn = "1089-5639"
+label = "JPCA"
+name = "J. Phys. Chem. A"
+color = "#378ADD"
+
+[[journals]]
+issn = "1948-7185"
+label = "JPCL"
+name = "J. Phys. Chem. Lett."
+color = "#EF9F27"
+
+[[journals]]
+issn = "1520-6106"
+label = "JPCB"
+name = "J. Phys. Chem. B"
+color = "#D4537E"
+
+[[journals]]
+issn = "1932-7447"
+label = "JPCC"
+name = "J. Phys. Chem. C"
+color = "#D85A30"
+
+[[journals]]
+issn = "0021-9606"
+label = "JCP"
+name = "J. Chem. Phys."
+color = "#639922"
+
+[[journals]]
+issn = "0192-8651"
+label = "JCC"
+name = "J. Comput. Chem."
+color = "#BA7517"
+
+[[journals]]
+issn = "0020-7608"
+label = "IJQC"
+name = "Int. J. Quantum Chem."
+color = "#888780"
+
+[[journals]]
+issn = "2057-3960"
+label = "npjCM"
+name = "npj Comput. Mater."
+color = "#5DCAA5"
+
+[[journals]]
+issn = "2635-098X"
+label = "DigDisc"
+name = "Digital Discovery"
+color = "#85B7EB"
+
+[[journals]]
+issn = "1759-0876"
+label = "WIREs"
+name = "WIREs Comput. Mol. Sci."
+color = "#CECBF6"
