@@ -94,22 +94,16 @@ name = "J. Chem. Phys."
 color = "#639922"
 
 [[journals]]
-issn = "0192-8651"
-label = "JCC"
-name = "J. Comput. Chem."
-color = "#BA7517"
-
-[[journals]]
-issn = "0020-7608"
-label = "IJQC"
-name = "Int. J. Quantum Chem."
-color = "#888780"
-
-[[journals]]
 issn = "2057-3960"
 label = "npjCM"
 name = "npj Comput. Mater."
 color = "#5DCAA5"
+
+[[journals]]
+issn = "2635-098X"
+label = "DigDisc"
+name = "Digital Discovery"
+color = "#85B7EB"
 
 [[journals]]
 issn = "1759-0876"

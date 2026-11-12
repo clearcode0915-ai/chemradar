@@ -62,10 +62,7 @@ mark{background:transparent;color:var(--mark);font-weight:500}
 .q-clear.on{display:block}
 .q-clear:hover{color:var(--tx);background:var(--card2)}
 
-.chips{display:flex;gap:7px;margin-top:11px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;
-  -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 26px),transparent);
-          mask-image:linear-gradient(to right,#000 calc(100% - 26px),transparent)}
-.chips::-webkit-scrollbar{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
 .chip{
   flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
   border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:12.5px;cursor:pointer;transition:.15s;
@@ -136,8 +133,8 @@ main{padding:22px 0 60px}
 .links a:hover{text-decoration:underline;text-underline-offset:2px}
 .doi{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--tx3);letter-spacing:-.01em}
 
-#more{display:block;width:100%;margin:18px 0 0;padding:11px;border:1px dashed var(--bd2);border-radius:10px;background:transparent;color:var(--tx2);font:inherit;font-size:13px;cursor:pointer;transition:.15s}
-#more:hover{color:var(--tx);border-color:var(--ac);background:var(--card)}
+#sentinel{height:1px}
+.loading{text-align:center;padding:22px 0 8px;font-size:12px;color:var(--tx3)}
 .empty{text-align:center;padding:70px 20px;color:var(--tx3)}
 .empty p{margin:0 0 14px;font-size:14px}
 .empty button{padding:7px 14px;border:1px solid var(--bd2);border-radius:8px;background:var(--card);color:var(--tx2);font:inherit;font-size:13px;cursor:pointer}
@@ -210,7 +207,7 @@ footer .sep{margin:0 7px;opacity:.5}
   <div class="cap" id="lb-cap"></div>
 </div>
 
-<main id="main"><div class="wrap"><div id="list"></div><button id="more" hidden></button><div id="empty" class="empty" hidden><p>没有匹配的文献</p><button id="reset">清空筛选条件</button></div></div></main>
+<main id="main"><div class="wrap"><div id="list"></div><div id="sentinel" aria-hidden="true"></div><div id="empty" class="empty" hidden><p>没有匹配的文献</p><button id="reset">清空筛选条件</button></div></div></main>
 
 <footer><div class="wrap">
   元数据来自 <a href="https://www.crossref.org/" target="_blank" rel="noopener">Crossref</a>，标题中译由 <a href="https://mymemory.translated.net/" target="_blank" rel="noopener">MyMemory</a> 自动生成，仅供速览。
@@ -228,7 +225,7 @@ footer .sep{margin:0 7px;opacity:.5}
   const COVERS = DATA.covers || 'auto';   // auto | off
   let stars = new Set();
   try { stars = new Set(JSON.parse(localStorage.getItem(STAR_KEY) || '[]')); } catch(e){}
-  const state = { q:'', j:new Set(), days:0, star:false, shown:30 };
+  const state = { q:'', j:new Set(), days:0, star:false };
   const openAbs = new Set();   // 记住哪些摘要被展开，重渲染后不丢
   const now = () => Date.now()/1000;
 
@@ -373,40 +370,65 @@ footer .sep{margin:0 7px;opacity:.5}
     </article>`;
   }
 
-  function render(){
-    const ts = terms();
-    const items = filtered();
-    const list = $('#list');
-    if(!items.length){
-      list.innerHTML = ''; $('#more').hidden = true; $('#empty').hidden = false;
-      $('#hint').textContent = '0 篇';
-      chips(); return;
+  const BATCH = 40;
+  let view = { items: [], rendered: 0, dayTotal: new Map() };
+
+  function apply(){                        // 筛选条件变化：重算 + 重绘首屏
+    view.items = filtered();
+    view.rendered = 0;
+    view.dayTotal = new Map();
+    view.items.forEach(p => { const k = dayKey(p.ts); view.dayTotal.set(k, (view.dayTotal.get(k) || 0) + 1); });
+    $('#list').innerHTML = '';
+    if(!view.items.length){
+      $('#empty').hidden = false; updateHint(); chips(); return;
     }
     $('#empty').hidden = true;
-    const slice = items.slice(0, state.shown);
-    const out = [];
-    let last = null, buf = [];
-    slice.forEach(p => {
+    appendBatch(); updateHint(); chips(); fillViewport();
+  }
+
+  function appendBatch(){                  // 追加一批，跨天时不重复放日期头
+    const batch = view.items.slice(view.rendered, view.rendered + BATCH);
+    if(!batch.length) return false;
+    const lastDay = view.rendered ? dayKey(view.items[view.rendered - 1].ts) : null;
+    const groups = [];
+    batch.forEach(p => {
       const k = dayKey(p.ts);
-      if(k !== last && buf.length){ out.push(dayBlock(last, buf)); buf = []; }
-      if(k !== last) last = k;
-      buf.push(p);
+      if(!groups.length || groups[groups.length - 1].k !== k) groups.push({ k, items: [] });
+      groups[groups.length - 1].items.push(p);
     });
-    if(buf.length) out.push(dayBlock(last, buf));
-    list.innerHTML = out.join('');
-    const rest = items.length - slice.length;
-    const more = $('#more');
-    more.hidden = rest <= 0;
-    if(rest > 0) more.textContent = `继续加载（还有 ${rest} 篇）`;
-    const today = items.filter(p => now() - p.ts < 86400).length;   // 跟着筛选走，口径与列表一致
+    const ts = terms();
+    let html = '';
+    groups.forEach((g, i) => {
+      html += (i === 0 && lastDay === g.k)
+        ? g.items.map(p => card(p, ts)).join('')
+        : dayBlock(g.k, g.items);
+    });
+    $('#list').insertAdjacentHTML('beforeend', html);
+    view.rendered += batch.length;
+    return true;
+  }
+
+  function fillViewport(){                 // 屏幕还没填满就继续补，避免大片空白
+    let guard = 0;
+    while(view.rendered < view.items.length && guard++ < 30){
+      const s = $('#sentinel');
+      if(!s || s.getBoundingClientRect().top > window.innerHeight + 500) break;
+      if(!appendBatch()) break;
+      updateHint();
+    }
+  }
+
+  function updateHint(){
     const only = [...state.j][0];
-    $('#hint').textContent = `匹配 ${items.length} 篇 · 今日新增 ${today} 篇` + (only ? ` · 只看 ${only}` : '');
-    chips();
+    $('#hint').textContent = view.items.length
+      ? `共 ${view.items.length} 篇 · 已显示 ${view.rendered} 篇` + (only ? ` · 只看 ${only}` : '')
+      : '0 篇';
   }
 
   function dayBlock(key, items){
-    const head = `<div class="day"><h3>${dayLabel(items[0].ts)}</h3><span class="cnt">${items.length}</span><span class="line"></span></div>`;
-    return head + items.map(p => card(p, terms())).join('');
+    const total = view.dayTotal.get(key) || items.length;
+    return `<div class="day"><h3>${dayLabel(items[0].ts)}</h3><span class="cnt">${total}</span><span class="line"></span></div>`
+      + items.map(p => card(p, terms())).join('');
   }
 
   /* 事件 */
@@ -415,10 +437,10 @@ footer .sep{margin:0 7px;opacity:.5}
     const v = e.target.value;
     $('#qclear').classList.toggle('on', !!v);
     clearTimeout(timer);
-    timer = setTimeout(() => { state.q = v; state.shown = 30; render(); }, 130);
+    timer = setTimeout(() => { state.q = v; apply(); }, 130);
   });
   $('#qclear').addEventListener('click', () => {
-    $('#q').value = ''; state.q = ''; $('#qclear').classList.remove('on'); state.shown = 30; render(); $('#q').focus();
+    $('#q').value = ''; state.q = ''; $('#qclear').classList.remove('on'); apply(); $('#q').focus();
   });
   $('#chips').addEventListener('click', e => {
     const b = e.target.closest('.chip'); if(!b) return;
@@ -426,18 +448,18 @@ footer .sep{margin:0 7px;opacity:.5}
     // 单选：点哪本就只看哪本；再点一次当前这本 = 回到全部
     if(!j || (state.j.size === 1 && state.j.has(j))) state.j.clear();
     else { state.j.clear(); state.j.add(j); }
-    state.shown = 30; render();
+    apply();
   });
   $('#range').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
     state.days = Number(b.dataset.d);
     [...$('#range').children].forEach(x => x.classList.toggle('on', x === b));
-    state.shown = 30; render();
+    apply();
   });
   $('#only-star').addEventListener('change', e => {
     state.star = e.target.checked;
     $('#star-f').classList.toggle('on', state.star);
-    state.shown = 30; render();
+    apply();
   });
   $('#list').addEventListener('click', e => {
     const th = e.target.closest('.thumb[data-img]');
@@ -449,7 +471,7 @@ footer .sep{margin:0 7px;opacity:.5}
       localStorage.setItem(STAR_KEY, JSON.stringify([...stars]));
       s.classList.toggle('on', stars.has(id));
       s.textContent = stars.has(id) ? '★' : '☆';
-      if(state.star) render();
+      if(state.star) apply();
       return;
     }
     const t = e.target.closest('.ab-t');
@@ -459,7 +481,13 @@ footer .sep{margin:0 7px;opacity:.5}
       if(art){ open ? openAbs.add(art.dataset.id) : openAbs.delete(art.dataset.id); }
     }
   });
-  $('#more').addEventListener('click', () => { state.shown += 40; render(); });
+  // 滚动到底自动续载（不再有"继续加载"按钮）
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(es => {
+      if(es.some(e => e.isIntersecting)){ appendBatch(); updateHint(); fillViewport(); }
+    }, { rootMargin: '600px 0px' }).observe($('#sentinel'));
+  }
+  window.addEventListener('resize', fillViewport);
 
   const lb = $('#lb'), lbImg = $('#lb-img'), lbCap = $('#lb-cap');
   function openLb(src, cap){
@@ -473,10 +501,10 @@ footer .sep{margin:0 7px;opacity:.5}
   $('#lb-x').addEventListener('click', closeLb);
   lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
   $('#reset').addEventListener('click', () => {
-    state.q = ''; state.j.clear(); state.days = 0; state.star = false; state.shown = 30;
+    state.q = ''; state.j.clear(); state.days = 0; state.star = false;
     $('#q').value = ''; $('#only-star').checked = false; $('#star-f').classList.remove('on');
     [...$('#range').children].forEach((x,i) => x.classList.toggle('on', i === 3));
-    render();
+    apply();
   });
   document.addEventListener('keydown', e => {
     if(e.key === '/' && document.activeElement !== $('#q')){ e.preventDefault(); $('#q').focus(); }
@@ -498,7 +526,7 @@ footer .sep{margin:0 7px;opacity:.5}
   /* 头部时间 */
   const gen = DATA.generated_at ? new Date(DATA.generated_at) : null;
   $('#upd').textContent = gen ? '更新于 ' + ago(gen.getTime()/1000) : '';
-  render();
+  apply();
 })();
 </script>
 </body>
