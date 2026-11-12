@@ -18,8 +18,16 @@ arxiv = false
 arxiv_categories = ["physics.chem-ph"]
 
 [covers]
-# auto = 有 RSS 真图就用真图，没有则用生成的占位封面；off = 卡片不带封面
+# auto = 有真图就用真图，没有则用生成的占位封面；off = 卡片不带封面
 mode = "auto"
+# ACS 的目录图可以直接问 CDN 反推（不校验签名）。关掉就只用 RSS + 生成封面。
+probe_acs = true
+probe_max_index = 16     # 从最大图号往下试，命中即停
+max_probe_per_run = 300  # 单轮最多探多少篇，避免一次打太多请求
+probe_workers = 6
+# 缩略图走图片代理压缩：ACS 原图约 400KB，代理后约 7KB。留空则直接用原图。
+# {url} 会被替换成去掉协议头的图片地址。
+thumb_proxy = "https://images.weserv.nl/?url={url}&w=240&output=webp&q=72&fit=cover"
 
 [filter]
 # 期刊前置内容不是研究论文，默认剔除。下面是从实际数据里归纳出来的标题形态，
@@ -51,6 +59,8 @@ label = "JCTC"
 name = "J. Chem. Theory Comput."
 color = "#7F77DD"
 rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jctcce"
+acs_key = "jctcce"          # 图片 CDN 的刊路径
+acs_prefix = "ct"         # 目录图文件名前缀
 
 [[journals]]
 issn = "1549-9596"
@@ -58,6 +68,8 @@ label = "JCIM"
 name = "J. Chem. Inf. Model."
 color = "#1D9E75"
 rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jcimcl"
+acs_key = "jcisd8"          # 图片 CDN 的刊路径
+acs_prefix = "ci"         # 目录图文件名前缀
 
 [[journals]]
 issn = "1089-5639"
@@ -65,6 +77,8 @@ label = "JPCA"
 name = "J. Phys. Chem. A"
 color = "#378ADD"
 rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpcafh"
+acs_key = "jpcafh"          # 图片 CDN 的刊路径
+acs_prefix = "jp"         # 目录图文件名前缀
 
 [[journals]]
 issn = "1948-7185"
@@ -72,6 +86,8 @@ label = "JPCL"
 name = "J. Phys. Chem. Lett."
 color = "#EF9F27"
 rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpclcd"
+acs_key = "jpclcd"          # 图片 CDN 的刊路径
+acs_prefix = "jz"         # 目录图文件名前缀
 
 [[journals]]
 issn = "1520-6106"
@@ -79,6 +95,8 @@ label = "JPCB"
 name = "J. Phys. Chem. B"
 color = "#D4537E"
 rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpcbfk"
+acs_key = "jpcbfk"          # 图片 CDN 的刊路径
+acs_prefix = "jp"         # 目录图文件名前缀
 
 [[journals]]
 issn = "1932-7447"
@@ -86,6 +104,8 @@ label = "JPCC"
 name = "J. Phys. Chem. C"
 color = "#D85A30"
 rss = "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=jpccck"
+acs_key = "jpccck"          # 图片 CDN 的刊路径
+acs_prefix = "jp"         # 目录图文件名前缀
 
 [[journals]]
 issn = "0021-9606"

@@ -71,6 +71,7 @@ def main() -> int:
     if (cfg.get("covers", {}).get("mode") or "auto").lower() != "off":
         log("▸ 抓取目录图（TOC graphic）")
         covers = covers_mod.collect(cfg)
+        covers.update({k: v for k, v in covers_mod.probe_acs(papers, cfg).items() if v})
         hit = 0
         for p in papers:
             img = covers.get(p.get("doi") or "")

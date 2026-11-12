@@ -223,6 +223,7 @@ footer .sep{margin:0 7px;opacity:.5}
   const JMAP = new Map((DATA.journals||[]).map(j => [j.label, j]));
   const STAR_KEY = 'lit-radar:stars', THEME_KEY = 'lit-radar:theme';
   const COVERS = DATA.covers || 'auto';   // auto | off
+  const THUMB = DATA.thumb_proxy || '';   // 缩略图代理模板，含 {url}
   let stars = new Set();
   try { stars = new Set(JSON.parse(localStorage.getItem(STAR_KEY) || '[]')); } catch(e){}
   const state = { q:'', j:new Set(), days:0, star:false };
@@ -325,12 +326,17 @@ footer .sep{margin:0 7px;opacity:.5}
     return `<div class="thumb gen" style="background-image:url(&quot;data:image/svg+xml,${encodeURIComponent(svg)}&quot;)" aria-hidden="true"></div>`;
   }
 
+  function thumbUrl(url){
+    if (!THUMB) return url;
+    return THUMB.replace('{url}', encodeURIComponent(url.replace(/^https?:\/\//, '')));
+  }
+
   function cover(p){
     if (COVERS === 'off') return '';
     if (p.img) {
       return `<button class="thumb" data-img="${esc(p.img)}" data-cap="${esc(p.title)}" title="查看目录图" aria-label="查看目录图">` +
-             `<img src="${esc(p.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" ` +
-             `onerror="this.parentElement.remove()"></button>`;
+             `<img src="${esc(thumbUrl(p.img))}" data-orig="${esc(p.img)}" alt="" loading="lazy" decoding="async" ` +
+             `referrerpolicy="no-referrer" onerror="this.onerror=function(){this.parentElement.remove()};this.src=this.dataset.orig"></button>`;
     }
     return genCover(p);
   }

@@ -48,6 +48,7 @@ def _payload(papers: list[dict], cfg: dict) -> dict:
                  "window_days": site.get("window_days", 14)},
         "journals": journals,
         "covers": (cfg.get("covers", {}) or {}).get("mode", "auto"),
+        "thumb_proxy": (cfg.get("covers", {}) or {}).get("thumb_proxy", ""),
         "papers": slim,
     }
 
